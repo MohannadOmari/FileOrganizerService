@@ -3,8 +3,8 @@ namespace FileOrganizerService
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        public static string source = @"C:\Users\mohan\Desktop\organizer";
-        public static string destination = @"C:\Users\mohan\Desktop\movedTo";
+        public const string source = @"C:\Users\mohan\Desktop\organizer";
+        public const string destination = @"C:\Users\mohan\Desktop\movedTo";
 
         public Worker(ILogger<Worker> logger)
         {
@@ -15,7 +15,16 @@ namespace FileOrganizerService
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                using var watcher = new FileSystemWatcher(@"C:\Users\mohan\Desktop\organizer", "*.txt");
+                if (!Directory.Exists(source))
+                {
+                    Directory.CreateDirectory(source);
+                }
+                if (!Directory.Exists(destination))
+                {
+                    Directory.CreateDirectory(destination);
+                }
+
+                using var watcher = new FileSystemWatcher($@"{source}", "*.txt");
 
                 watcher.NotifyFilter = NotifyFilters.Attributes
                                      | NotifyFilters.CreationTime
@@ -35,7 +44,7 @@ namespace FileOrganizerService
                 /*watcher.Filter = "*.png";*/
                 watcher.IncludeSubdirectories = true;
                 watcher.EnableRaisingEvents = true;
-                _logger.LogInformation("Service started");
+                _logger.LogInformation("Service is Ready");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
@@ -54,13 +63,13 @@ namespace FileOrganizerService
         private static void OnCreated(object sender, FileSystemEventArgs e)
         {
             DateTime fileDate = System.IO.File.GetCreationTime(e.FullPath);
-            if (!Directory.Exists($@"C:\Users\mohan\Desktop\movedTo\{fileDate.Year}"))
+            if (!Directory.Exists($@"{destination}\{fileDate.Year}"))
             {
-                Directory.CreateDirectory($@"C:\Users\mohan\Desktop\movedTo\{fileDate.Year}");
+                Directory.CreateDirectory($@"{destination}\{fileDate.Year}");
             }
-            if (!Directory.Exists($@"C:\Users\mohan\Desktop\movedTo\{fileDate.Year}\{fileDate.Month}"))
+            if (!Directory.Exists($@"{destination}\{fileDate.Year}\{fileDate.Month}"))
             {
-                Directory.CreateDirectory($@"C:\Users\mohan\Desktop\movedTo\{fileDate.Year}\{fileDate.Month}");
+                Directory.CreateDirectory($@"{destination}\{fileDate.Year}\{fileDate.Month}");
             }
             System.IO.File.Move($@"{e.FullPath}", $@"{destination}\{fileDate.Year}\{fileDate.Month}\{e.Name}");
             Console.WriteLine($@"Moved to: {destination}\{fileDate.Year}\{fileDate.Month}");
